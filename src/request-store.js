@@ -1,5 +1,7 @@
 export const STORAGE_KEY = "mis4173-equipment-requests";
 
+const PRIORITIES = ["Low", "Normal", "High"];
+
 export class RequestValidationError extends Error {
   constructor(errors) {
     super("The equipment request is incomplete.");
@@ -19,6 +21,7 @@ export function validateRequest(input = {}) {
   if (!clean(input.department)) errors.department = "Select a department.";
   if (!clean(input.equipment)) errors.equipment = "Enter the equipment needed.";
   if (!clean(input.neededBy)) errors.neededBy = "Select the date needed.";
+  if (!PRIORITIES.includes(clean(input.priority))) errors.priority = "Select a priority.";
   if (!clean(input.reason)) errors.reason = "Enter a business reason.";
 
   return errors;
@@ -43,6 +46,7 @@ export function createRequest(input, options = {}) {
     department: clean(input.department),
     equipment: clean(input.equipment),
     neededBy: clean(input.neededBy),
+    priority: clean(input.priority),
     reason: clean(input.reason),
     createdAt: now.toISOString(),
   };
@@ -60,7 +64,12 @@ export function loadRequests(storage = globalThis.localStorage) {
     if (!stored) return [];
 
     const parsed = JSON.parse(stored);
-    return Array.isArray(parsed) ? parsed.filter(isRequestRecord) : [];
+    return Array.isArray(parsed)
+      ? parsed.filter(isRequestRecord).map((request) => ({
+          ...request,
+          priority: PRIORITIES.includes(request.priority) ? request.priority : "Normal",
+        }))
+      : [];
   } catch {
     return [];
   }
