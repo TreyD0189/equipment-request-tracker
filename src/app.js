@@ -62,6 +62,7 @@ function createRequestRow(request) {
     request.department,
     request.equipment,
     formatDate(request.neededBy),
+    request.priority ?? "Normal",
     request.reason,
     formatDateTime(request.createdAt),
   ];
