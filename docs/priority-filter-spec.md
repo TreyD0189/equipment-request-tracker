@@ -53,3 +53,22 @@ Managers need to view one priority at a time and quickly return to all requests 
 - Accounts, shared storage, cross-device preferences, databases, or interface redesign.
 - Recovering original missing priorities from records that were already saved as Normal before this feature.
 
+## Verification Results
+
+Verified on October 16, 2026 using isolated sample records in local Chromium. No existing user browser data was accessed. All 10 automated tests passed with `npm test`; browser checks below passed with no JavaScript errors. Desktop and mobile layouts were also inspected.
+
+| Criterion | Result | Test performed / how to repeat |
+| --- | --- | --- |
+| AC1 | Pass | Confirm the visible label and four options. Focus the filter and use Home, Arrow Down, and Enter to select Low with the keyboard. |
+| AC2 | Pass | Start without a saved preference: All shows every record. Select High, refresh, and confirm High and its results remain. Set an unsupported saved preference and refresh: All is selected. |
+| AC3 | Pass | Load Low, Normal, and High sample requests. Select each priority and confirm only exact matches appear; All restores every record. |
+| AC4 | Pass | Load a legacy request without a priority property. Confirm All displays it as Not specified and each priority excludes it. Add another request and refresh; confirm the legacy record still exists without a priority property. |
+| AC5 | Pass | Load records out of timestamp order, including two equal timestamps. Confirm All and each priority view are newest first and equal timestamps retain their relative order. |
+| AC6 | Pass | With only a Low request, select High. Confirm the no-match message, hidden table, and Show all requests button. Activate the button and refresh: All and the Low request remain visible. |
+| AC7 | Pass | Start with an empty request array. Confirm the original No requests yet guidance, available filter, and zero count, including after changing the filter. |
+| AC8 | Pass | Select High, add a High request, then add a Low request. Confirm High stays selected, only the High request appears, and the count is one. Select Low to reveal the saved Low request and its correct count. |
+| AC9 | Pass | Compare the raw request storage before and after changing every filter: unchanged. Save and refresh to confirm persistence. Submit an empty form to confirm required-field errors and no extra saved record. Confirm Normal defaults on new requests. Run locally without login or database. |
+| AC10 | Pass | Make localStorage getItem/setItem throw only for mis4173-equipment-priority-filter. Reload: All opens. Select High and add a valid High request: filtering and request storage still work and Request added is displayed. |
+
+Review: changes are limited to this specification, the filter markup, browser interaction, request/filter storage logic, and related tests. Request storage keeps its original key and records; filtering never writes request data. User content continues to use textContent. No dependencies were added to the application.
+

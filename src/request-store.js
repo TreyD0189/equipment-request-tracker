@@ -1,4 +1,5 @@
 export const STORAGE_KEY = "mis4173-equipment-requests";
+export const FILTER_STORAGE_KEY = "mis4173-equipment-priority-filter";
 
 const PRIORITIES = ["Low", "Normal", "High"];
 
@@ -65,10 +66,7 @@ export function loadRequests(storage = globalThis.localStorage) {
 
     const parsed = JSON.parse(stored);
     return Array.isArray(parsed)
-      ? parsed.filter(isRequestRecord).map((request) => ({
-          ...request,
-          priority: PRIORITIES.includes(request.priority) ? request.priority : "Normal",
-        }))
+      ? parsed.filter(isRequestRecord)
       : [];
   } catch {
     return [];
@@ -78,6 +76,36 @@ export function loadRequests(storage = globalThis.localStorage) {
 export function saveRequests(requests, storage = globalThis.localStorage) {
   if (!storage) return;
   storage.setItem(STORAGE_KEY, JSON.stringify(requests));
+}
+
+function validFilter(priority) {
+  return priority === "All" || PRIORITIES.includes(priority);
+}
+
+export function loadPriorityFilter(storage) {
+  try {
+    const priority = (storage ?? globalThis.localStorage)?.getItem(FILTER_STORAGE_KEY);
+    return validFilter(priority) ? priority : "All";
+  } catch {
+    return "All";
+  }
+}
+
+export function savePriorityFilter(priority, storage) {
+  try {
+    (storage ?? globalThis.localStorage)?.setItem(
+      FILTER_STORAGE_KEY,
+      validFilter(priority) ? priority : "All",
+    );
+  } catch {
+    // Keep filtering usable in this session when preference storage is unavailable.
+  }
+}
+
+export function filterRequests(requests, priority = "All") {
+  return requests
+    .filter((request) => !validFilter(priority) || priority === "All" || request.priority === priority)
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
 }
 
 function isRequestRecord(value) {

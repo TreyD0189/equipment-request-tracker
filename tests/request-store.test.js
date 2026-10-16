@@ -4,10 +4,14 @@ import test from "node:test";
 import {
   RequestValidationError,
   STORAGE_KEY,
+  FILTER_STORAGE_KEY,
   appendRequest,
   createRequest,
+  filterRequests,
+  loadPriorityFilter,
   loadRequests,
   saveRequests,
+  savePriorityFilter,
 } from "../src/request-store.js";
 
 const validInput = {
@@ -91,7 +95,7 @@ test("saveRequests and loadRequests round-trip valid records", () => {
   assert.deepEqual(loadRequests(storage), [request]);
 });
 
-test("loadRequests preserves older records by defaulting priority to Normal", () => {
+test("loadRequests preserves older records without assigning a priority", () => {
   const storage = new MemoryStorage();
   const legacyRequest = {
     id: "request-old",
@@ -104,7 +108,14 @@ test("loadRequests preserves older records by defaulting priority to Normal", ()
   };
   storage.setItem(STORAGE_KEY, JSON.stringify([legacyRequest]));
 
-  assert.deepEqual(loadRequests(storage), [{ ...legacyRequest, priority: "Normal" }]);
+  const loaded = loadRequests(storage);
+  assert.deepEqual(loaded, [legacyRequest]);
+  assert.deepEqual(filterRequests(loaded, "All"), [legacyRequest]);
+  for (const priority of ["Low", "Normal", "High"]) {
+    assert.deepEqual(filterRequests(loaded, priority), []);
+  }
+  saveRequests(appendRequest(loaded, createRequest(validInput)), storage);
+  assert.deepEqual(loadRequests(storage)[1], legacyRequest);
 });
 
 test("loadRequests safely handles damaged stored data", () => {
@@ -112,4 +123,58 @@ test("loadRequests safely handles damaged stored data", () => {
   storage.setItem(STORAGE_KEY, "not-json");
 
   assert.deepEqual(loadRequests(storage), []);
+});
+
+test("filters exact priorities and sorts newest first without changing records or storage", () => {
+  const storage = new MemoryStorage();
+  const records = [
+    { ...createRequest(validInput), id: "older", priority: "High", createdAt: "2026-01-01T00:00:00Z" },
+    { ...createRequest(validInput), id: "low", priority: "Low", createdAt: "2026-03-01T00:00:00Z" },
+    { ...createRequest(validInput), id: "normal", priority: "Normal", createdAt: "2026-02-01T00:00:00Z" },
+    { ...createRequest(validInput), id: "newer", priority: "High", createdAt: "2026-04-01T00:00:00Z" },
+    { ...createRequest(validInput), id: "same-time", priority: "High", createdAt: "2026-04-01T00:00:00Z" },
+  ];
+  saveRequests(records, storage);
+  const before = storage.getItem(STORAGE_KEY);
+  const loaded = loadRequests(storage);
+  loaded.forEach(Object.freeze);
+  Object.freeze(loaded);
+  for (const priority of ["All", "Low", "Normal", "High"]) {
+    const expected = ["newer", "same-time", "low", "normal", "older"]
+      .filter((id) => priority === "All" || records.find((r) => r.id === id).priority === priority);
+    assert.deepEqual(filterRequests(loaded, priority).map((r) => r.id), expected);
+  }
+  assert.equal(storage.getItem(STORAGE_KEY), before);
+  assert.deepEqual(loaded, records);
+  assert.deepEqual(filterRequests([], "High"), []);
+});
+
+test("filter preference defaults to All and round-trips all valid selections", () => {
+  const storage = new MemoryStorage();
+  assert.equal(loadPriorityFilter(storage), "All");
+  storage.setItem(FILTER_STORAGE_KEY, "Urgent");
+  assert.equal(loadPriorityFilter(storage), "All");
+  for (const priority of ["All", "Low", "Normal", "High"]) {
+    savePriorityFilter(priority, storage);
+    assert.equal(loadPriorityFilter(storage), priority);
+  }
+});
+
+test("preference failures do not block filtering or request storage", () => {
+  const storage = new MemoryStorage();
+  const get = storage.getItem.bind(storage);
+  const set = storage.setItem.bind(storage);
+  storage.getItem = (key) => {
+    if (key === FILTER_STORAGE_KEY) throw new Error("Preference read blocked");
+    return get(key);
+  };
+  storage.setItem = (key, value) => {
+    if (key === FILTER_STORAGE_KEY) throw new Error("Preference write blocked");
+    set(key, value);
+  };
+  assert.equal(loadPriorityFilter(storage), "All");
+  assert.doesNotThrow(() => savePriorityFilter("High", storage));
+  const request = createRequest({ ...validInput, priority: "High" });
+  saveRequests([request], storage);
+  assert.deepEqual(filterRequests(loadRequests(storage), "High"), [request]);
 });
