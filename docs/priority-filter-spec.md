@@ -11,16 +11,17 @@ Managers need to view one priority at a time and quickly return to all requests 
 ## Functional Rules
 
 1. Provide a visibly labeled, keyboard-accessible priority filter with exactly four choices: All, Low, Normal, and High. Only one choice can be selected at a time.
-2. On first use, select All. Remember the selected choice in the current browser using localStorage and restore it after a refresh. A missing or unrecognized saved choice defaults to All.
-3. All shows every existing request. Low, Normal, and High show only requests whose explicitly stored priority matches that choice.
-4. Older requests without a stored priority appear only under All. Do not assign or persist Normal to those requests as part of loading, filtering, or saving other requests. Their priority cell displays "Not specified". Existing explicitly stored priorities remain unchanged.
-5. Keep the list in newest-first order using each request's createdAt timestamp. Requests with the same timestamp retain their relative order.
-6. When a selected priority has no matches, display "No requests match the selected priority." Hide the empty table and provide a "Show all requests" button. The button selects All, displays all requests, and remembers All for refresh.
-7. When there are no requests at all, retain the application's existing empty-list guidance. Keep the filter available.
-8. The request count reflects the number of requests currently displayed.
-9. Adding a request preserves the active filter. The new request appears immediately if it matches the active filter or All is selected. Otherwise it remains saved and appears when the appropriate filter is selected.
-10. Changing filters changes only the view and the saved filter preference; it does not rewrite, remove, or change stored requests.
-11. If filter preference storage is unavailable, filtering still works during the current page session. Do not report a successful request as failed solely because saving the filter preference failed.
+2. Selecting all will show all requests.
+3. Remember the selected choice in the current browser using localStorage and restore it after a refresh. A missing or unrecognized saved choice defaults to All.
+4. Low, Normal, and High show only requests whose explicitly stored priority matches that choice.
+5. Older requests without a stored priority appear only under All. Do not assign or persist Normal to those requests as part of loading, filtering, or saving other requests. Their priority cell displays "Not specified". Existing explicitly stored priorities remain unchanged.
+6. Keep the list in newest-first order using each request's createdAt timestamp. Requests with the same timestamp retain their relative order.
+7. When a selected priority has no matches, display "No requests match the selected priority." Hide the empty table and provide a "Show all requests" button. The button selects All, displays all requests, and remembers All for refresh.
+8. When there are no requests at all, retain the application's existing empty-list guidance. Keep the filter available.
+9. The request count reflects the number of requests currently displayed.
+10. Adding a request preserves the active filter. The new request appears immediately if it matches the active filter or All is selected. Otherwise it remains saved and appears when the appropriate filter is selected.
+11. Changing filters changes only the view and the saved filter preference; it does not rewrite, remove, or change stored requests.
+12. If filter preference storage is unavailable, filtering still works during the current page session. Do not report a successful request as failed solely because saving the filter preference failed.
 
 ## Constraints
 
