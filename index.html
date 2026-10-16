@@ -100,7 +100,22 @@
             <p class="step-label">Current workload</p>
             <h2 id="request-list-title">Equipment requests</h2>
           </div>
-          <p id="request-count" class="request-count">0 requests</p>
+          <p id="request-count" class="request-count" role="status">0 requests</p>
+        </div>
+
+        <div class="field">
+          <label for="priority-filter">Filter by priority</label>
+          <select id="priority-filter">
+            <option>All</option>
+            <option>Low</option>
+            <option>Normal</option>
+            <option>High</option>
+          </select>
+        </div>
+
+        <div id="no-matches" hidden>
+          <p role="status">No requests match the selected priority.</p>
+          <button id="show-all-requests" type="button">Show all requests</button>
         </div>
 
         <div id="empty-state" class="empty-state">

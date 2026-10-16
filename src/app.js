@@ -2,7 +2,10 @@ import {
   RequestValidationError,
   appendRequest,
   createRequest,
+  filterRequests,
+  loadPriorityFilter,
   loadRequests,
+  savePriorityFilter,
   saveRequests,
 } from "./request-store.js";
 
@@ -13,11 +16,27 @@ const count = document.querySelector("#request-count");
 const emptyState = document.querySelector("#empty-state");
 const tableWrapper = document.querySelector("#request-table-wrapper");
 const tableBody = document.querySelector("#request-table-body");
+const priorityFilter = document.querySelector("#priority-filter");
+const noMatches = document.querySelector("#no-matches");
+const showAllButton = document.querySelector("#show-all-requests");
 
 let requests = loadRequests();
+priorityFilter.value = loadPriorityFilter();
 
 neededByInput.min = new Date().toISOString().slice(0, 10);
 renderRequests();
+
+priorityFilter.addEventListener("change", () => {
+  savePriorityFilter(priorityFilter.value);
+  renderRequests();
+});
+
+showAllButton.addEventListener("click", () => {
+  priorityFilter.value = "All";
+  savePriorityFilter("All");
+  renderRequests();
+  priorityFilter.focus();
+});
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -48,11 +67,12 @@ form.addEventListener("submit", (event) => {
 });
 
 function renderRequests() {
-  const hasRequests = requests.length > 0;
-  count.textContent = `${requests.length} ${requests.length === 1 ? "request" : "requests"}`;
-  emptyState.hidden = hasRequests;
-  tableWrapper.hidden = !hasRequests;
-  tableBody.replaceChildren(...requests.map(createRequestRow));
+  const visibleRequests = filterRequests(requests, priorityFilter.value);
+  count.textContent = `${visibleRequests.length} ${visibleRequests.length === 1 ? "request" : "requests"}`;
+  emptyState.hidden = requests.length > 0;
+  noMatches.hidden = requests.length === 0 || visibleRequests.length > 0;
+  tableWrapper.hidden = visibleRequests.length === 0;
+  tableBody.replaceChildren(...visibleRequests.map(createRequestRow));
 }
 
 function createRequestRow(request) {
@@ -62,7 +82,7 @@ function createRequestRow(request) {
     request.department,
     request.equipment,
     formatDate(request.neededBy),
-    request.priority ?? "Normal",
+    request.priority ?? "Not specified",
     request.reason,
     formatDateTime(request.createdAt),
   ];
